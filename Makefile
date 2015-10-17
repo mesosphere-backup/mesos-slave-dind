@@ -16,20 +16,22 @@ define image-version
 $(shell ./image-version.sh "$(ORG)/$(REPO):latest")
 endef
 
-push:
-	docker push $(TAG)
+version:
+	$(eval VERSION=$(image-version))
+.PHONY: version
+
+push: version
+	docker push $(ORG)/$(REPO):$(VERSION)
 .PHONY: push
 
 image:
 	docker build -t $(ORG)/$(REPO):latest .
 .PHONY: image
 
-tag:
-	$(eval VERSION=$(image-version))
+tag: version
 	docker tag $(ORG)/$(REPO):latest $(ORG)/$(REPO):$(VERSION)
 .PHONY: tag
 
-release:
-	$(eval VERSION=$(image-version))
+release: version
 	git tag -a "$(VERSION)" -m '$(REPO) version $(VERSION)'
 .PHONY: release
