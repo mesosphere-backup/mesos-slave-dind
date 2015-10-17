@@ -6,8 +6,6 @@
 # Original source: https://github.com/jpetazzo/dind
 # Modified to add docker network reservations.
 
-set -e
-
 # Ensure that all nodes in /dev/mapper correspond to mapped devices currently loaded by the device-mapper kernel driver
 dmsetup mknodes
 
@@ -26,8 +24,8 @@ mountpoint -q $CGROUP ||
 
 if [ -d /sys/kernel/security ] && ! mountpoint -q /sys/kernel/security; then
   mount -t securityfs none /sys/kernel/security || {
-      echo "Could not mount /sys/kernel/security."
-      echo "AppArmor detection and --privileged mode might break."
+    echo "Could not mount /sys/kernel/security."
+    echo "AppArmor detection and --privileged mode might break."
   }
 fi
 
@@ -35,7 +33,7 @@ fi
 for SUBSYS in $(cut -d: -f2 /proc/1/cgroup); do
   [ -d $CGROUP/$SUBSYS ] || mkdir $CGROUP/$SUBSYS
   mountpoint -q $CGROUP/$SUBSYS ||
-          mount -n -t cgroup -o $SUBSYS cgroup $CGROUP/$SUBSYS
+    mount -n -t cgroup -o $SUBSYS cgroup $CGROUP/$SUBSYS
 
   # The two following sections address a bug which manifests itself
   # by a cryptic "lxc-start: no ns_cgroup option specified" when
@@ -54,8 +52,8 @@ for SUBSYS in $(cut -d: -f2 /proc/1/cgroup); do
   # the || true prevents the following error to quit (see https://github.com/jpetazzo/dind/pull/84#issuecomment-134236303):
   # ln: failed to create symbolic link '/sys/fs/cgroup/systemd/name=systemd': Operation not permitted
   echo $SUBSYS | grep -q ^name= && {
-          NAME=$(echo $SUBSYS | sed s/^name=//)
-          ln -s $SUBSYS $CGROUP/$NAME || true
+    NAME=$(echo $SUBSYS | sed s/^name=//)
+    ln -s $SUBSYS $CGROUP/$NAME || true
   }
 
   # Likewise, on at least one system, it has been reported that
@@ -131,8 +129,8 @@ if [ "${STORAGE_DIR_FS}" != "overlay" ] || [ "${STORAGE_FS}" != "overlay" ] || [
   VAR_LIB_DOCKER_SIZE=${VAR_LIB_DOCKER_SIZE:-5}
   mkdir -p "$(dirname "${STORAGE_FILE}")"
   if [ ! -f "${STORAGE_FILE}" ]; then
-      dd if=/dev/zero of="${STORAGE_FILE}" bs=1G seek=${VAR_LIB_DOCKER_SIZE} count=0
-      echo y | mkfs.ext3 "${STORAGE_FILE}"
+    dd if=/dev/zero of="${STORAGE_FILE}" bs=1G seek=${VAR_LIB_DOCKER_SIZE} count=0
+    echo y | mkfs.ext3 "${STORAGE_FILE}"
   fi
   mount -o loop "${STORAGE_FILE}" "${STORAGE_DIR}"
 fi
