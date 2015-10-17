@@ -13,7 +13,7 @@ ORG=mesosphere
 REPO=$(shell git rev-parse --show-toplevel | xargs basename)
 
 define image-version
-$(shell ./image-version.sh "$(ORG)/$(REPO):latest");
+$(shell ./image-version.sh "$(ORG)/$(REPO):latest")
 endef
 
 push:
