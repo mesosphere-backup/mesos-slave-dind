@@ -3,9 +3,10 @@ all: image tag
 
 help:
 	@echo 'Goals:'
-	@echo '  image - build a docker image'
-	@echo '  tag   - tag the latest image with a version based on its contents'
-	@echo '  push  - push a docker image to the locally configured docker repository'
+	@echo '  image    - build a docker image'
+	@echo '  tag      - tag the latest image with a version based on its contents'
+	@echo '  push     - push a docker image to the locally configured docker repository'
+	@echo '  release  - create release tag from latest version'
 .PHONY: help
 
 ORG=mesosphere
@@ -20,5 +21,10 @@ image:
 .PHONY: image
 
 tag:
-	docker tag $(ORG)/$(REPO):latest $(ORG)/$(REPO):$(shell ./image-version.sh "$(ORG)/$(REPO):latest")
+    $(eval VERSION = $(shell ./image-version.sh "$(ORG)/$(REPO):latest")
+	docker tag $(ORG)/$(REPO):latest $(ORG)/$(REPO):$(VERSION)
 .PHONY: tag
+
+release
+    $(eval VERSION = $(shell ./image-version.sh "$(ORG)/$(REPO):latest")
+    git tag -a "$(VERSION)" -m '$(REPO) version $(VERSION)'
