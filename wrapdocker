@@ -110,12 +110,13 @@ mkdir -p "${STORAGE_DIR}"
 # Rational: There are kernels with broken overlay-over-overlay support (4.2 and
 # probably 3.19). On those it's possible to mount an overlay in an overlay, but
 # writing to a file results in a "No device" error.
+OVERLAY_WORKS=true
 if [ "${STORAGE_FS}" = "overlay" ]; then
   D="${STORAGE_DIR}/smoke"
   mkdir -p "${D}/upper" "${D}/lower" "${D}/work" "${D}/mount"
 
   mount -t overlay overlay -o"lowerdir=${D}/lower,upperdir=${D}/upper,workdir=${D}/work" "${D}/mount" &&
-  echo foo > "${D}/mount/probe" || OOO_BROKEN=true
+  echo foo > "${D}/mount/probe" || OVERLAY_WORKS=false
 
   umount -f "${D}/mount" || true
   rm -rf "${D}" || true
@@ -124,7 +125,7 @@ fi
 # If another filesystem than overlay is used or overlay does not work, create
 # an ext3 loop device as an intermediary layer. The max size of the loop device
 # is $VAR_LIB_DOCKER_SIZE in GB (default=5).
-if [ "${STORAGE_FS}" != "overlay" -o ${OVERLAY_WORKS} != true ]; then
+if [ "${STORAGE_FS}" != "overlay" -o "${OVERLAY_WORKS}" == false ]; then
   STORAGE_FILE="/data/docker"
   VAR_LIB_DOCKER_SIZE=${VAR_LIB_DOCKER_SIZE:-5}
   mkdir -p "$(dirname "${STORAGE_FILE}")"
