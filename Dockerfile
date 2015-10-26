@@ -23,7 +23,7 @@ RUN apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 581
         && \
     apt-get clean
 
-ENV WRAPPER_VERSION 0.2.1
+ENV WRAPPER_VERSION 0.2.2
 COPY ./wrapdocker /usr/local/bin/
 
 ENTRYPOINT ["wrapdocker"]
