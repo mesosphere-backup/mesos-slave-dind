@@ -184,10 +184,15 @@ trap "service docker stop" EXIT
 DOCKER_DAEMON_ARGS="${DOCKER_DAEMON_ARGS} --bip=${IP_CIDR} --fixed-cidr=${FIXED_CIDR} --storage-driver=${STORAGE_FS}"
 
 # start docker daemon
-if [ "$LOG" == "file" ]; then
-  docker daemon ${DOCKER_DAEMON_ARGS} &>/var/log/docker.log &
+if docker daemon --help &>/dev/null; then
+  DOCKER_DAEMON="docker daemon"
 else
-  docker daemon ${DOCKER_DAEMON_ARGS} &
+  DOCKER_DAEMON="docker -d"
+fi
+if [ "$LOG" == "file" ]; then
+  ${DOCKER_DAEMON} ${DOCKER_DAEMON_ARGS} &>/var/log/docker.log &
+else
+  ${DOCKER_DAEMON} ${DOCKER_DAEMON_ARGS} &
 fi
 (( timeout = 60 + SECONDS ))
 until docker info >/dev/null 2>&1; do
