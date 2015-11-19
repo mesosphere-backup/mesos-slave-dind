@@ -24,6 +24,4 @@ Launches tasks using the included Docker Engine, rather than the host's Docker E
 - **DOCKER_NETWORK_SIZE** - Specify a CIDR range to apply to the above offset (default=`24`).
 - **VAR_LIB_DOCKER_SIZE** - Specify the max size (in GB) of the loop device to be mounted at /var/lib/docker (default=`5`). This is only used if OverlayFS is not supported by the kernel or the parent docker is configured to use AUFS.
 
-Source: <https://github.com/mesosphere/docker-containers/tree/master/mesos-slave-dind>
-
 Inspiration: <https://github.com/jpetazzo/dind>
