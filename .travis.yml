@@ -1,0 +1,17 @@
+sudo: required
+services:
+  - docker
+env:
+  - CONTAINER_IPS=true
+  - CONTAINER_IPS=
+install:
+  - docker version
+  - docker-compose version
+script:
+  - make image
+  - docker-compose -p dind up -d
+  - docker-compose -p dind scale mesosslave=2
+  - MASTER_IP=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' dind_mesosmaster_1)
+  - SLAVE1_IP=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' dind_mesosslave_1)
+  - SLAVE2_IP=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' dind_mesosslave_2)
+  - timeout 60 bash -c "while curl -f -q http://${MASTER_IP}:5050; do echo -n .; sleep 1; done"
