@@ -147,6 +147,8 @@ rm -rf /var/run/docker.pid
 # Other containers on the same host should have different offsets
 # such that the IPs within the range (offset <-> offset + size - 1) do not overlap.
 if [ ! -z "${DOCKER_NETWORK_OFFSET:-}" ]; then
+  echo -n "Setting up cluster-wide routable container IPs: "
+
   # create docker0 bridge manually and attach it to the veth interface eth0
   brctl addbr docker0
   brctl addif docker0 eth0
@@ -180,7 +182,7 @@ if [ ! -z "${DOCKER_NETWORK_OFFSET:-}" ]; then
     "$(( n4 + ((i4 - n4 + o4) & w4) ))")
 
   FIXED_CIDR=$(ipcalc $IP_PLUS_OFFSET/$DOCKER_NETWORK_SIZE | grep Network | awk '{print $2;}')
-  echo "Using network $FIXED_CIDR for docker containers"
+  echo "$FIXED_CIDR"
 
   # let docker reuse the given IP. If you run more than one dind slave, add
   # --fixed-cidr=a.b.c.d/24 to DOCKER_DAEMON_ARGS with disjunct networks.
