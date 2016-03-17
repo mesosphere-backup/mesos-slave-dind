@@ -1,4 +1,4 @@
-FROM mesosphere/mesos-slave:0.26.0-0.2.145.ubuntu1404
+FROM mesosphere/mesos-slave:0.27.2-2.0.15.ubuntu1404
 MAINTAINER Mesosphere <support@mesosphere.io>
 
 RUN apt-get update -qq && \
