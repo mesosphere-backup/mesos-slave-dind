@@ -35,13 +35,13 @@
 
   ```
   $ make release
-  git tag -a "0.2.3_mesos-0.24.0_docker-1.7.1_ubuntu-14.04.3" -m 'mesos-slave-dind version 0.2.3_mesos-0.24.0_docker-1.7.1_ubuntu-14.04.3'
+  git tag -a "${VERSION}" -m "mesos-slave-dind version ${VERSION}"
   ```
 
 7. Push git tag
 
   ```
-  git push --follow-tags
+  $ git push --follow-tags
   Counting objects: 1, done.
   Writing objects: 100% (1/1), 203 bytes | 0 bytes/s, done.
   Total 1 (delta 0), reused 0 (delta 0)
