@@ -18,6 +18,8 @@
   docker tag mesosphere/mesos-slave-dind:latest mesosphere/mesos-slave-dind:0.2.3_mesos-0.24.0_docker-1.7.1_ubuntu-14.04.3
   ```
 
+1. Validate release image (e.g. with mesos-compose-dind)
+
 1. Create release branch
 
   ```
@@ -33,6 +35,13 @@
   ```
 
 1. Create & merge release branch to master branch
+
+1. Switch to updated master branch
+
+  ```
+  $ git checkout master
+  $ git pull
+  ```
 
 1. Tag git release
 
