@@ -29,7 +29,7 @@ RUN curl -fsSL 'https://sks-keyservers.net/pks/lookup?op=get&search=0xee6d536cf7
         && \
     apt-get clean
 
-ENV WRAPPER_VERSION 0.3.0
+ENV WRAPPER_VERSION 0.4.0
 COPY ./wrapdocker /usr/local/bin/
 
 ENTRYPOINT ["wrapdocker"]
