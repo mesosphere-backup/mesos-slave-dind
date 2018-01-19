@@ -13,31 +13,36 @@ dmsetup mknodes
 CGROUP=/sys/fs/cgroup
 : {LOG:=stdio}
 
-[ -d $CGROUP ] ||
-  mkdir $CGROUP
+if ! [[ -d "${CGROUP}" ]]; then
+  mkdir "${CGROUP}"
+fi
 
-mountpoint -q $CGROUP ||
-  mount -n -t tmpfs -o uid=0,gid=0,mode=0755 cgroup $CGROUP || {
+if ! mountpoint -q "${CGROUP}"; then
+  if ! mount -n -t tmpfs -o uid=0,gid=0,mode=0755 cgroup "${CGROUP}"; then
     echo "Could not make a tmpfs mount. Did you use --privileged?"
     exit 1
-  }
+  fi
+fi
 
-if [ -d /sys/kernel/security ] && ! mountpoint -q /sys/kernel/security; then
-  mount -t securityfs none /sys/kernel/security || {
+if [[ -d /sys/kernel/security ]] && ! mountpoint -q /sys/kernel/security; then
+  if ! mount -t securityfs none /sys/kernel/security; then
     echo "Could not mount /sys/kernel/security."
     echo "AppArmor detection and --privileged mode might break."
-  }
+  fi
 fi
 
 # Mount the cgroup hierarchies exactly as they are in the parent system.
 for SUBSYS in $(cut -d: -f2 /proc/1/cgroup); do
-  [ -d $CGROUP/$SUBSYS ] || mkdir $CGROUP/$SUBSYS
-  mountpoint -q $CGROUP/$SUBSYS ||
-    mount -n -t cgroup -o $SUBSYS cgroup $CGROUP/$SUBSYS
+  if ! [[ -d "${CGROUP}/${SUBSYS}" ]]; then
+    mkdir "${CGROUP}/${SUBSYS}"
+  fi
+  if ! mountpoint -q "${CGROUP}/${SUBSYS}"; then
+    mount -n -t cgroup -o "${SUBSYS}" cgroup "${CGROUP}/${SUBSYS}"
+  fi
 
   # The two following sections address a bug which manifests itself
   # by a cryptic "lxc-start: no ns_cgroup option specified" when
-  # trying to start containers withina container.
+  # trying to start containers within a container.
   # The bug seems to appear when the cgroup hierarchies are not
   # mounted on the exact same directories in the host, and in the
   # container.
@@ -49,28 +54,32 @@ for SUBSYS in $(cut -d: -f2 /proc/1/cgroup); do
   # cgroup. To avoid the aforementioned bug, we symlink "foo" to
   # "name=foo". This shouldn't have any adverse effect.
 
-  # the || true prevents the following error to quit (see https://github.com/jpetazzo/dind/pull/84#issuecomment-134236303):
-  # ln: failed to create symbolic link '/sys/fs/cgroup/systemd/name=systemd': Operation not permitted
-  echo $SUBSYS | grep -q ^name= && {
-    NAME=$(echo $SUBSYS | sed s/^name=//)
-    ln -s $SUBSYS $CGROUP/$NAME || true
-  }
+  if [[ "${SUBSYS}" =~ ^name=(.*)$ ]]; then
+    echo "Linking ${SUBSYS} to ${CGROUP}/${BASH_REMATCH[1]}"
+    ln -s "${SUBSYS}" "${CGROUP}/${BASH_REMATCH[1]}"
+  fi
 
   # Likewise, on at least one system, it has been reported that
   # systemd would mount the CPU and CPU accounting controllers
   # (respectively "cpu" and "cpuacct") with "-o cpuacct,cpu"
   # but on a directory called "cpu,cpuacct" (note the inversion
   # in the order of the groups). This tries to work around it.
-  [ $SUBSYS = cpuacct,cpu ] && ln -s $SUBSYS $CGROUP/cpu,cpuacct
+
+  if [[ "${SUBSYS}" == "cpuacct,cpu" ]]; then
+    echo "Linking ${SUBSYS} to ${CGROUP}/cpu,cpuacct"
+    ln -s "${SUBSYS}" "${CGROUP}/cpu,cpuacct"
+  fi
 done
 
 # Note: as I write those lines, the LXC userland tools cannot setup
 # a "sub-container" properly if the "devices" cgroup is not in its
 # own hierarchy. Let's detect this and issue a warning.
-grep -q :devices: /proc/1/cgroup ||
+if ! grep -q :devices: /proc/1/cgroup; then
   echo "WARNING: the 'devices' cgroup should be in its own hierarchy."
-grep -qw devices /proc/1/cgroup ||
+fi
+if ! grep -qw devices /proc/1/cgroup; then
   echo "WARNING: it looks like the 'devices' cgroup is not mounted."
+fi
 
 # Now, close extraneous file descriptors.
 pushd /proc/self/fd >/dev/null
@@ -105,27 +114,25 @@ mkdir -p "${STORAGE_DIR}"
 # 1. create smoke dir in the storage dir being mounted (possibly on an overlay fs)
 # 2. try to mount an overlay fs on top of the smoke dir
 # 3. try to write a file in the overlay mount
-# 4. if that succeeds set OVERLAY_WORKS=true
+# 4. if that fails, default to using AUFS
 #
 # Rational: There are kernels with broken overlay-over-overlay support (4.2 and
 # probably 3.19). On those it's possible to mount an overlay in an overlay, but
 # writing to a file results in a "No device" error.
-OVERLAY_WORKS=true
-if [ "${STORAGE_FS}" = "overlay" ]; then
+if [[ "${STORAGE_FS}" == "overlay" ]]; then
   D="${STORAGE_DIR}/smoke"
   mkdir -p "${D}/upper" "${D}/lower" "${D}/work" "${D}/mount"
 
   mount -t overlay overlay -o"lowerdir=${D}/lower,upperdir=${D}/upper,workdir=${D}/work" "${D}/mount" &&
-  echo foo > "${D}/mount/probe" || OVERLAY_WORKS=false
+  echo foo > "${D}/mount/probe" || STORAGE_FS=aufs
 
   umount -f "${D}/mount" || true
   rm -rf "${D}" || true
 fi
 
-# If another filesystem than overlay is used or overlay does not work, create
-# an ext3 loop device as an intermediary layer. The max size of the loop device
-# is $VAR_LIB_DOCKER_SIZE in GB (default=5).
-if [ "${STORAGE_FS}" != "overlay" -o "${OVERLAY_WORKS}" == false ]; then
+# For AUFS, create an ext3 loop device as an intermediary layer.
+# The max size of the loop device is $VAR_LIB_DOCKER_SIZE in GB (default=5).
+if [[ "${STORAGE_FS}" == "aufs" ]]; then
   STORAGE_FILE="/data/docker"
   VAR_LIB_DOCKER_SIZE=${VAR_LIB_DOCKER_SIZE:-5}
   mkdir -p "$(dirname "${STORAGE_FILE}")"
@@ -134,6 +141,11 @@ if [ "${STORAGE_FS}" != "overlay" -o "${OVERLAY_WORKS}" == false ]; then
     echo y | mkfs.ext3 "${STORAGE_FILE}"
   fi
   mount -o loop "${STORAGE_FILE}" "${STORAGE_DIR}"
+fi
+
+# Tell Docker to use Overlay2 if the OS supports overlay (assuming Ubuntu Xenial and Docker >= 17)
+if [[ "${STORAGE_FS}" != "overlay" ]]; then
+  STORAGE_FS=overlay2
 fi
 
 DOCKER_DAEMON_ARGS="${DOCKER_DAEMON_ARGS:-} --storage-driver=${STORAGE_FS}"
@@ -191,7 +203,9 @@ fi
 trap "service docker stop" EXIT
 
 # start docker daemon
-if docker daemon --help &>/dev/null; then
+if hash dockerd &>/dev/null; then
+  DOCKER_DAEMON="dockerd"
+elif docker daemon --help &>/dev/null; then
   DOCKER_DAEMON="docker daemon"
 else
   DOCKER_DAEMON="docker -d"

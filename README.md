@@ -38,7 +38,7 @@ Inspiration: <https://github.com/jpetazzo/dind>
 
 ## License
 
-Copyright 2015 [The Mesos Slave Docker-in-Docker Authors](./AUTHORS.md)
+Copyright 2015-2018 [The Mesos Slave Docker-in-Docker Authors](./AUTHORS.md)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
