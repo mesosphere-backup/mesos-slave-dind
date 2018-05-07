@@ -1,4 +1,4 @@
-FROM mesosphere/mesos-slave:1.4.1
+FROM mesosphere/mesos-slave:1.5.0
 MAINTAINER Mesosphere <support@mesosphere.io>
 
 RUN apt-get update -qq && \
